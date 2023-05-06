@@ -35,6 +35,9 @@ sandstone1_img = pygame.image.load('sandstone1.png')
 
  #to be continued...
 
+font = pygame.font.Font('Baron Neue.otf', 20)
+health_text = font.render('Health:', False, (255,255,255))
+
 class GameSprite(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, image):
         super().__init__()
@@ -121,8 +124,8 @@ class Soldier(pygame.sprite.Sprite):
         self.height = self.image.get_height()
     
     def health_bar(self):
-        rect_empty = pygame.Rect(10,10,100,20)
-        rect_full = pygame.Rect(10,10,self.health,20)
+        rect_empty = pygame.Rect(100,10,100,20)
+        rect_full = pygame.Rect(100,10,self.health,20)
         pygame.draw.rect(sc, (255,0,0), rect_empty)
         if self.health > 0:
             pygame.draw.rect(sc, (0,255,0), rect_full)
@@ -161,8 +164,8 @@ class Soldier(pygame.sprite.Sprite):
         #jumping
         if self.jump == True and not self.in_air:
             self.update_action(2)
-            self.vel_y = -16
-            self.jump = False 
+            self.vel_y = -12.3
+            self.jump = False
             self.in_air = True  
         #action of gravity 
         self.vel_y += gravity
@@ -373,27 +376,30 @@ enemy_groups = [pygame.sprite.Group() for i in range(5)]
 for i in range(len(enemy_groups)-1):
     for y in range(2):
         if i == 0:
-            enemy = Soldier('enemy', random.randint(-120,0),700, 1.4, 5, 20)
+            enemy = Soldier('enemy', random.randint(-120,0),700, 1.7, 5, 20)
         if i == 1:
-            enemy = Soldier('enemy', random.randint(-120,0), 500, 1.4, 5, 20)
+            enemy = Soldier('enemy', random.randint(-120,0), 500, 1.7, 5, 20)
         if i == 2:
-            enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.4, 5, 20)
+            enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.7, 5, 20)
         if i == 3:
-            enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.4, 5, 20)
+            enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.7, 5, 20)
         enemy_groups[i].add(enemy)
 
 
-player = Soldier("player",200,200,1.4,5,40)
+player = Soldier("player",200,200,1.7,5,40)
 world = World("map1_2.csv")
 world.create_level(GameSprite, grass_img , grass2_img)
 
 while game:
     sc.blit(backgrounds[background_count], (0,0))
+    ammo_text = font.render(f'Ammo: {player.ammo}', False, (255,255,255))
+    sc.blit(health_text, (10,12))
+    sc.blit(ammo_text, (10,37))
     redraw()
     if random.randint(1,1000) == 2:
         item = ItemBox(0, 40)
         if world.level == 1:
-            item.rect.x = random.choice([random.randint(100,200), random.randint(750,850)])
+            item.rect.x = random.choice([random.randint(50,150), random.randint(800,900)])
         if world.level == 2:
             item.rect.x = random.choice([random.randint(0,100), 250, 700, random.randint(850,950)])
         plane = Plane(item)
@@ -404,17 +410,17 @@ while game:
         for i in range(len(enemy_groups)-1):
             for y in range(2):
                 if i == 0:
-                    enemy = Soldier('enemy', random.randint(-120,0),700, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(-120,0),700, 1.7, 5, 20)
                 if i == 1:
-                    enemy = Soldier('enemy', random.randint(-120,0), 500, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(-120,0), 500, 1.7, 5, 20)
                 if i == 2:
-                    enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.7, 5, 20)
                 if i == 3:
-                    enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.7, 5, 20)
                 enemy_groups[i].add(enemy)
         player.amount_kills = 0
     
-    if player.count_kills > 8 and world.level == 1: 
+    if player.count_kills > 1 and world.level == 1: 
         world.level += 1
         background_count += 1
         plane_group.empty()
