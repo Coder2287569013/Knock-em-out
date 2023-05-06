@@ -414,7 +414,7 @@ while game:
                 enemy_groups[i].add(enemy)
         player.amount_kills = 0
     
-    if player.count_kills > 2 and world.level == 1: 
+    if player.count_kills > 8 and world.level == 1: 
         world.level += 1
         background_count += 1
         plane_group.empty()
