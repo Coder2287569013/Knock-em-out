@@ -13,8 +13,13 @@ ai_moving_left, ai_moving_right = False, False
 shoot = False
 tileSize = 50
 update = True
+fade = True
+pause = False
 amount_kills = 0
+level_kills = 8
 background_count = 0
+map_list = ['map1_2.csv', 'map2_1.csv', 'map3_1.csv']
+map_count = 0
 
 sc = pygame.display.set_mode((sc_w, sc_h))
 pygame.display.set_caption("Knock'em out! alpha v1.9")
@@ -27,16 +32,38 @@ plane_img = pygame.image.load('img/plane/plane.png')
 boxes_img = [ammo_box_img, health_box_img]
 background_img = pygame.image.load('background.png')
 background2_img = pygame.image.load('background2.jpg')
-backgrounds = [background_img, pygame.transform.scale(background2_img, (sc_w, sc_h))]
+background3_img = pygame.image.load('background3.png')
+start_background = pygame.image.load('start_background.jpg')
+backgrounds = [background_img, pygame.transform.scale(background2_img, (sc_w, sc_h)), pygame.transform.scale(background3_img, (sc_w, sc_h)),]
 grass_img = pygame.image.load('grass3.png')
 grass2_img = pygame.image.load('grass4.png')
 sand1_img = pygame.image.load('sand1.png')
+sand2_img = pygame.image.load('sand2.png')
 sandstone1_img = pygame.image.load('sandstone1.png')
+sandstone2_img = pygame.image.load('sandstone2.png')
+sand_list = [sand1_img,sand2_img]
+sandstone_list = [sandstone1_img, sandstone2_img]
+
+shooting_s = pygame.mixer.music.load('shooting_s.ogg')
+helicopter_s = pygame.mixer.music.load('helicopter_s.ogg')
+pygame.mixer.music.set_volume(0.4)
 
  #to be continued...
 
 font = pygame.font.Font('Baron Neue.otf', 20)
+font2 = pygame.font.Font('Baron Neue.otf', 64)
+font3 = pygame.font.Font('Baron Neue.otf', 40)
+
 health_text = font.render('Health:', False, (255,255,255))
+
+def fade_animation(): 
+    fade = pygame.Surface((sc_w,sc_h))
+    fade.fill((0,0,0))
+    for alpha in range(0, 300):
+        fade.set_alpha(alpha)
+        sc.blit(fade, (0,0))
+        pygame.display.update()
+        pygame.time.delay(2)
 
 class GameSprite(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, image):
@@ -197,6 +224,7 @@ class Soldier(pygame.sprite.Sprite):
             bullet = Bullet(self.rect.centerx + (0.75 * self.rect.size[0] * self.direction), self.rect.centery, self.direction)
             bullets_group.add(bullet)
             self.ammo -= 1
+            pygame.mixer.Channel(0).play(shooting_s)
 
     def update_animation(self):
         ANIMATION_COOLDOWN = 125
@@ -216,6 +244,7 @@ class Soldier(pygame.sprite.Sprite):
                 self.update_action(0)
                 self.idling = True
                 self.idle_counter = 60
+
             if self.vision.colliderect(player.rect) and not self.in_air:
                 self.update_action(0)
                 self.shoot = True
@@ -243,7 +272,7 @@ class Soldier(pygame.sprite.Sprite):
                         self.idling = False
         else:
             if not player.alive and self.alive:
-                self.update_action(0)
+                self.update_action()
 
     def update_action(self, new_action):
         if new_action != self.action:
@@ -343,29 +372,71 @@ class Plane(pygame.sprite.Sprite):
             items_group.add(self.box)
             self.box.falling = False
         self.rect.x += 2*self.dx
+class Button():
+	def __init__(self,x,y,w,h,color1,color2,font,text):
+		self.rect = pygame.Rect(x,y,w,h)
+		self.color1 = color1
+		self.color = color1
+		self.color2 = color2
+		self.font = font
+		self.text = self.font.render(text, False, (255,255,255))
+	def set_color(self,new_color):
+		self.color = new_color
+	def is_focused(self,event):
+		if event.type == pygame.MOUSEMOTION:
+			x,y = event.pos
+			if self.rect.collidepoint(x,y):
+				self.set_color(self.color2)
+			else:
+				self.set_color(self.color1)
+	def is_clicked(self,event):
+		if event.type == pygame.MOUSEBUTTONDOWN:
+			x,y = event.pos
+			if self.rect.collidepoint(x,y):
+				return True
+	def draw(self):
+		pygame.draw.rect(sc, self.color, self.rect)
+		sc.blit(self.text, (self.rect.x + 10, self.rect.y + 10))
+
 def redraw():
-    for tile in world.listT:
-        tile.draw()
     player.update()
-    player.health_bar()
-    player.draw()
     for group in enemy_groups:
         for enemy in group:
             enemy.ai()
-            enemy.draw()
             enemy.update()
     if player.alive:
         player.movement(moving_left, moving_right, world)
         if shoot:
             player.shooting()
-    
-    bullets_group.draw(sc)
-    bullets_group_enemy.draw(sc)
+
     bullets_group.update()
     items_group.update()
-    items_group.draw(sc)
-    plane_group.draw(sc)
     plane_group.update()
+
+def menu(game, sc,fps,font,font2):
+    title_text = font2.render('Knock`em out!', False, (255,255,255))
+    button1 = Button(440,320,120,60,(255,0,0),(0,255,0), font, "Start")
+    button2 = Button(450,420,100,60,(255,0,0),(0,255,0),font,"Exit")
+    menu = True
+    while menu:
+        sc.blit(pygame.transform.scale(start_background, (sc_w,sc_h)), (0,0))
+        sc.blit(title_text, (250, 200))
+        button1.draw()
+        button2.draw()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                game = False
+            if button1.is_clicked(event):
+                menu = False
+                return menu
+            if button2.is_clicked(event):
+                pygame.quit()
+                game = False
+            button1.is_focused(event)
+            button2.is_focused(event)
+        pygame.display.update()
+        clock.tick(fps)
 
 
 bullets_group = pygame.sprite.Group()
@@ -387,24 +458,40 @@ for i in range(len(enemy_groups)-1):
 
 
 player = Soldier("player",200,200,1.7,5,40)
-world = World("map1_2.csv")
+world = World(map_list[map_count])
 world.create_level(GameSprite, grass_img , grass2_img)
+menu(game,sc,fps,font3,font2)
 
 while game:
-    sc.blit(backgrounds[background_count], (0,0))
+    sc.blit(backgrounds[world.level-1], (0,0))
     ammo_text = font.render(f'Ammo: {player.ammo}', False, (255,255,255))
     sc.blit(health_text, (10,12))
     sc.blit(ammo_text, (10,37))
-    redraw()
-    if random.randint(1,1000) == 2:
-        item = ItemBox(0, 40)
-        if world.level == 1:
-            item.rect.x = random.choice([random.randint(50,150), random.randint(800,900)])
-        if world.level == 2:
-            item.rect.x = random.choice([random.randint(0,100), 250, 700, random.randint(850,950)])
-        plane = Plane(item)
-        plane.position()
-        plane_group.add(plane)
+
+    for tile in world.listT:
+        tile.draw()
+    player.draw()
+    player.health_bar()
+    for group in enemy_groups:
+        for enemy in group:
+            enemy.draw()
+    bullets_group.draw(sc)
+    bullets_group_enemy.draw(sc)
+    items_group.draw(sc)
+    plane_group.draw(sc)
+    if not pause:
+        redraw()
+        if random.randint(1,1000) == 2:
+            item = ItemBox(0, 40)
+            if world.level == 1:
+                item.rect.x = random.choice([random.randint(50,150), random.randint(800,900)])
+            if world.level == 2:
+                item.rect.x = random.choice([random.randint(0,100), 250, 700, random.randint(850,950)])
+            if world.level == 3:
+                item.rect.x = random.choice([100, 150, random.randint(300,350), random.randint(600,650), 800, 850])
+            plane = Plane(item)
+            plane.position()
+            plane_group.add(plane)
 
     if player.amount_kills >= 8:
         for i in range(len(enemy_groups)-1):
@@ -420,38 +507,53 @@ while game:
                 enemy_groups[i].add(enemy)
         player.amount_kills = 0
     
-    if player.count_kills > 1 and world.level == 1: 
+    if player.count_kills >= level_kills and player.alive: 
         world.level += 1
-        background_count += 1
         plane_group.empty()
-        world.filename = 'map2_1.csv'
+        world.filename = map_list[world.level-1]
         world.listT = []
-        world.create_level(GameSprite, sand1_img, sandstone1_img)
+        world.create_level(GameSprite, sand_list[world.level-2], sandstone_list[world.level-2])
+
         player.rect.x, player.rect.y = 100, 100
         player.health = 100
         player.ammo = 40
         player.count_kills = 0
+
         for enemy_group in enemy_groups:
             enemy_group.empty()
         items_group.empty()
+
         for i in range(len(enemy_groups)-1):
             for y in range(2):
                 if i == 0:
-                    enemy = Soldier('enemy', random.randint(-120,0),700, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(-120,0),700, 1.7, 5, 20)
                 if i == 1:
-                    enemy = Soldier('enemy', random.randint(-120,0), 500, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(-120,0), 500, 1.7, 5, 20)
                 if i == 2:
-                    enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.7, 5, 20)
                 if i == 3:
-                    enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.4, 5, 20)
+                    enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.7, 5, 20)
                 enemy_groups[i].add(enemy)
             player.amount_kills = 0
+        level_kills *= 1.5
+    if player.count_kills >= level_kills-6 and world.level == 1:
+        pause = True
+        if fade == True:
+            fade_animation()
+            fade = False
+        sc.blit(pygame.transform.scale(start_background, (sc_w, sc_h)), (0,0))
+        text_win = font2.render("You Win!", False, (255,255,255))
+        text_thx = font3.render('Thanks for playing', False, (255,255,255))
+        sc.blit(text_win, (sc_w/2-150, sc_h/2-100))
+        sc.blit(text_thx, (sc_w/2-200, sc_h/2))
 
     pygame.display.update()
+    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             game = False
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_d:
                 moving_right = True
@@ -459,13 +561,20 @@ while game:
                 moving_left = True
             if event.key == pygame.K_SPACE:
                 player.jump = True
+
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_d:
                 moving_right = False
             if event.key == pygame.K_a:
                 moving_left = False
+            if event.key == pygame.K_ESCAPE and pause != True:
+                pause = True
+            else:
+                pause = False
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             shoot = True
+
         if event.type == pygame.MOUSEBUTTONUP:
             shoot = False
         
