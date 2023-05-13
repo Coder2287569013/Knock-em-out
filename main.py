@@ -44,9 +44,8 @@ sandstone2_img = pygame.image.load('sandstone2.png')
 sand_list = [sand1_img,sand2_img]
 sandstone_list = [sandstone1_img, sandstone2_img]
 
-shooting_s = pygame.mixer.music.load('shooting_s.ogg')
-helicopter_s = pygame.mixer.music.load('helicopter_s.ogg')
-pygame.mixer.music.set_volume(0.4)
+shooting_s = pygame.mixer.Sound('shooting_s.ogg')
+helicopter_s = pygame.mixer.Sound('helicopter_s.ogg')
 
  #to be continued...
 
