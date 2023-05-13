@@ -22,7 +22,7 @@ map_list = ['map1_2.csv', 'map2_1.csv', 'map3_1.csv']
 map_count = 0
 
 sc = pygame.display.set_mode((sc_w, sc_h))
-pygame.display.set_caption("Knock'em out! alpha v1.9")
+pygame.display.set_caption("Knock'em out! pre-release")
 clock = pygame.time.Clock()
 
 bullet_img = pygame.image.load('img/icons/bullet.png')
@@ -216,6 +216,7 @@ class Soldier(pygame.sprite.Sprite):
         #landing on a ground
         self.rect.x += dx
         self.rect.y += dy
+        print(dx)
 
     def shooting(self):
         if self.shoot_cooldown == 0 and self.ammo > 0:
@@ -271,7 +272,7 @@ class Soldier(pygame.sprite.Sprite):
                         self.idling = False
         else:
             if not player.alive and self.alive:
-                self.update_action()
+                self.update_action(0)
 
     def update_action(self, new_action):
         if new_action != self.action:
@@ -464,8 +465,10 @@ menu(game,sc,fps,font3,font2)
 while game:
     sc.blit(backgrounds[world.level-1], (0,0))
     ammo_text = font.render(f'Ammo: {player.ammo}', False, (255,255,255))
+    kills_text = font.render(f'Kills: {player.count_kills}/{int(level_kills)}', False, (255,255,255))
     sc.blit(health_text, (10,12))
     sc.blit(ammo_text, (10,37))
+    sc.blit(kills_text, (10,62))
 
     for tile in world.listT:
         tile.draw()
@@ -506,7 +509,7 @@ while game:
                 enemy_groups[i].add(enemy)
         player.amount_kills = 0
     
-    if player.count_kills >= level_kills and player.alive: 
+    if player.count_kills >= level_kills and player.alive and world.level < 3: 
         world.level += 1
         plane_group.empty()
         world.filename = map_list[world.level-1]
@@ -533,9 +536,9 @@ while game:
                 if i == 3:
                     enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.7, 5, 20)
                 enemy_groups[i].add(enemy)
-            player.amount_kills = 0
+        player.amount_kills = 0
         level_kills *= 1.5
-    if player.count_kills >= level_kills-6 and world.level == 1:
+    if player.count_kills >= level_kills and world.level == 3:
         pause = True
         if fade == True:
             fade_animation()
@@ -545,6 +548,14 @@ while game:
         text_thx = font3.render('Thanks for playing', False, (255,255,255))
         sc.blit(text_win, (sc_w/2-150, sc_h/2-100))
         sc.blit(text_thx, (sc_w/2-200, sc_h/2))
+    if not player.alive and player.frame_index == len(player.animation_list[player.action])-1:
+        pause = True
+        if fade == True:
+            fade_animation()
+            fade = False
+        sc.fill((0,0,0))
+        gameover_text = font2.render("Game Over", False, (255,0,0))
+        sc.blit(gameover_text, (sc_w/2-200, sc_h/2-150))  
 
     pygame.display.update()
     
