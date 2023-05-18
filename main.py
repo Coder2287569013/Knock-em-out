@@ -3,6 +3,7 @@ import os
 import random
 import csv
 pygame.init()
+pygame.mixer.init(frequency = 44100, size=-16, channels=1)
 
 sc_w, sc_h = 1000, 800
 fps = 60
@@ -15,14 +16,15 @@ tileSize = 50
 update = True
 fade = True
 pause = False
+sound = True
 amount_kills = 0
+plane_count = 0
 level_kills = 8
 background_count = 0
 map_list = ['map1_2.csv', 'map2_1.csv', 'map3_1.csv']
 map_count = 0
-
 sc = pygame.display.set_mode((sc_w, sc_h))
-pygame.display.set_caption("Knock'em out! alpha v1.9")
+pygame.display.set_caption("Knock'em out! pre-release")
 clock = pygame.time.Clock()
 
 bullet_img = pygame.image.load('img/icons/bullet.png')
@@ -46,12 +48,14 @@ sandstone_list = [sandstone1_img, sandstone2_img]
 
 shooting_s = pygame.mixer.Sound('shooting_s.ogg')
 helicopter_s = pygame.mixer.Sound('helicopter_s.ogg')
-
+win_s = pygame.mixer.Sound('win_sound.mp3')
+gameover_s = pygame.mixer.Sound('gameover_sound.mp3')
  #to be continued...
 
 font = pygame.font.Font('Baron Neue.otf', 20)
 font2 = pygame.font.Font('Baron Neue.otf', 64)
 font3 = pygame.font.Font('Baron Neue.otf', 40)
+font4 = pygame.font.Font('Baron Neue.otf', 98)
 
 health_text = font.render('Health:', False, (255,255,255))
 
@@ -111,7 +115,7 @@ class Soldier(pygame.sprite.Sprite):
         self.scale = scale
         self.speed = speed
         self.ammo = ammo
-        self.health = 100
+        self.health = 125
         self.max_health = self.health
         self.direction = 1
         self.frame_index = 0
@@ -150,7 +154,8 @@ class Soldier(pygame.sprite.Sprite):
         self.height = self.image.get_height()
     
     def health_bar(self):
-        rect_empty = pygame.Rect(100,10,100,20)
+        #health var for player
+        rect_empty = pygame.Rect(100,10,125,20)
         rect_full = pygame.Rect(100,10,self.health,20)
         pygame.draw.rect(sc, (255,0,0), rect_empty)
         if self.health > 0:
@@ -158,6 +163,7 @@ class Soldier(pygame.sprite.Sprite):
 
 
     def update(self):
+        #update an object of class Soldier
         self.update_animation()
         self.check_health()
         if self.shoot_cooldown > 0:
@@ -167,7 +173,6 @@ class Soldier(pygame.sprite.Sprite):
         dx = 0
         dy = 0
         #moving left or right
-        keys_input = pygame.key.get_pressed()
         if moving_right and self.rect.right < sc_w:
             self.direction = 1
             self.flip = False
@@ -198,7 +203,7 @@ class Soldier(pygame.sprite.Sprite):
         if self.vel_y >= 10:
             self.vel_y
         dy += self.vel_y
-
+        #collision with blocks of world
         for tile in world.listT:
             if tile.rect.colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
@@ -216,7 +221,6 @@ class Soldier(pygame.sprite.Sprite):
         #landing on a ground
         self.rect.x += dx
         self.rect.y += dy
-
     def shooting(self):
         if self.shoot_cooldown == 0 and self.ammo > 0:
             self.shoot_cooldown = 10
@@ -271,7 +275,7 @@ class Soldier(pygame.sprite.Sprite):
                         self.idling = False
         else:
             if not player.alive and self.alive:
-                self.update_action()
+                self.update_action(0)
 
     def update_action(self, new_action):
         if new_action != self.action:
@@ -318,7 +322,7 @@ class Bullet(pygame.sprite.Sprite):
                         self.kill()
         if pygame.sprite.spritecollide(player, bullets_group, False):
             if player.alive:
-                player.health -= 5
+                player.health -= 3
                 self.kill()
 
 
@@ -339,7 +343,7 @@ class ItemBox(pygame.sprite.Sprite):
             if self.image == boxes_img[0]:
                 player.ammo += 20
             if self.image == boxes_img[1]:
-                player.health += 20
+                player.health += 25
             self.kill()
 
 
@@ -364,8 +368,12 @@ class Plane(pygame.sprite.Sprite):
             self.rect.x = -300
             self.dx = 1
             self.image = pygame.transform.flip(self.image, True, False)
+            pygame.mixer.Channel(1).play(helicopter_s)
     def update(self):
+        global plane_count
         if (self.rect.left >= sc_w+500) or (self.rect.right <= -500):
+            pygame.mixer.Channel(1).stop()
+            plane_count -= 1
             self.kill()
         if ((self.rect.left <= self.box.rect.x-50 and self.dx == -1) or (self.rect.right >= self.box.rect.x+50 and self.dx == 1)) and self.box.falling:
             items_group.add(self.box)
@@ -416,18 +424,24 @@ def menu(game, sc,fps,font,font2):
     title_text = font2.render('Knock`em out!', False, (255,255,255))
     button1 = Button(440,320,120,60,(255,0,0),(0,255,0), font, "Start")
     button2 = Button(450,420,100,60,(255,0,0),(0,255,0),font,"Exit")
+    pygame.mixer.music.load("bmenu_music.mp3")
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1)
     menu = True
     while menu:
         sc.blit(pygame.transform.scale(start_background, (sc_w,sc_h)), (0,0))
         sc.blit(title_text, (250, 200))
         button1.draw()
         button2.draw()
-        pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 game = False
             if button1.is_clicked(event):
+                pygame.mixer.music.stop()
+                pygame.mixer.music.load('game_music.mp3')
+                pygame.mixer.music.play(-1)
+                pygame.mixer.music.set_volume(0.1)
                 menu = False
                 return menu
             if button2.is_clicked(event):
@@ -435,8 +449,45 @@ def menu(game, sc,fps,font,font2):
                 game = False
             button1.is_focused(event)
             button2.is_focused(event)
+        pygame.display.update()
         clock.tick(fps)
+def recreate():
+    player.rect.x, player.rect.y = 100, 100
+    player.health = 125
+    player.ammo = 40
+    player.count_kills = 0
 
+    for enemy_group in enemy_groups:
+        enemy_group.empty()
+    items_group.empty()
+
+    for i in range(len(enemy_groups)-1):
+        for y in range(2):
+            if i == 0:
+                enemy = Soldier('enemy', random.randint(-120,0),700, 1.7, 5, 20)
+            if i == 1:
+                enemy = Soldier('enemy', random.randint(-120,0), 500, 1.7, 5, 20)
+            if i == 2:
+                enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.7, 5, 20)
+            if i == 3:
+                enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.7, 5, 20)
+            enemy_groups[i].add(enemy)
+    player.amount_kills = 0
+def restart_game():
+    key = pygame.key.get_pressed()
+    if key[pygame.K_RETURN]:
+        pygame.mixer.music.play()
+        win_s.stop()
+        gameover_s.stop()
+        world.level = 1
+        plane_group.empty()
+        world.filename = map_list[0]
+        world.listT = []
+        world.create_level(GameSprite, grass_img, grass2_img)
+        player.alive = True
+        player.speed = 5
+        recreate()
+        pause = False
 
 bullets_group = pygame.sprite.Group()
 bullets_group_enemy = pygame.sprite.Group()
@@ -457,17 +508,23 @@ for i in range(len(enemy_groups)-1):
 
 
 player = Soldier("player",200,200,1.7,5,40)
-world = World(map_list[map_count])
+world = World(map_list[0])
 world.create_level(GameSprite, grass_img , grass2_img)
 menu(game,sc,fps,font3,font2)
+current_seconds = 0
+pygame.time.set_timer(pygame.USEREVENT, 1000)
 
 while game:
     sc.blit(backgrounds[world.level-1], (0,0))
+    display_seconds = current_seconds % 60
+    display_minutes = int(current_seconds/60) % 60
     ammo_text = font.render(f'Ammo: {player.ammo}', False, (255,255,255))
-    kill_text = font.render(f'Kills: {player.count_kills}/{level_kills}', False, (255,255,255))
+    kills_text = font.render(f'Kills: {player.count_kills}/{int(level_kills)}', False, (255,255,255))
+    timer_text = font.render(f'Time: {display_minutes:02}:{display_seconds:02}', False, (255,255,255))
     sc.blit(health_text, (10,12))
     sc.blit(ammo_text, (10,37))
-    sc.blit(kill_text, (10,62))
+    sc.blit(kills_text, (10,62))
+    sc.blit(timer_text, (10,87))
 
     for tile in world.listT:
         tile.draw()
@@ -480,9 +537,12 @@ while game:
     bullets_group_enemy.draw(sc)
     items_group.draw(sc)
     plane_group.draw(sc)
+
     if not pause:
+        fade = True
+        sound = True
         redraw()
-        if random.randint(1,1000) == 2:
+        if random.randint(1,1000) == 2 and plane_count < 3:
             item = ItemBox(0, 40)
             if world.level == 1:
                 item.rect.x = random.choice([random.randint(50,150), random.randint(800,900)])
@@ -493,6 +553,7 @@ while game:
             plane = Plane(item)
             plane.position()
             plane_group.add(plane)
+            plane_count += 1
 
     if player.amount_kills >= 8:
         for i in range(len(enemy_groups)-1):
@@ -508,45 +569,54 @@ while game:
                 enemy_groups[i].add(enemy)
         player.amount_kills = 0
     
-    if player.count_kills >= level_kills and player.alive: 
+    if player.count_kills >= level_kills and player.alive and world.level < 3: 
         world.level += 1
+        plane_count = 0
         plane_group.empty()
+        pygame.mixer.Channel(1).stop()
         world.filename = map_list[world.level-1]
         world.listT = []
         world.create_level(GameSprite, sand_list[world.level-2], sandstone_list[world.level-2])
 
-        player.rect.x, player.rect.y = 100, 100
-        player.health = 100
-        player.ammo = 40
-        player.count_kills = 0
+        recreate()
 
-        for enemy_group in enemy_groups:
-            enemy_group.empty()
-        items_group.empty()
-
-        for i in range(len(enemy_groups)-1):
-            for y in range(2):
-                if i == 0:
-                    enemy = Soldier('enemy', random.randint(-120,0),700, 1.7, 5, 20)
-                if i == 1:
-                    enemy = Soldier('enemy', random.randint(-120,0), 500, 1.7, 5, 20)
-                if i == 2:
-                    enemy = Soldier('enemy', random.randint(sc_w,sc_w+100), 700, 1.7, 5, 20)
-                if i == 3:
-                    enemy = Soldier('enemy', random.randint(sc_w, sc_w+100), 500, 1.7, 5, 20)
-                enemy_groups[i].add(enemy)
-            player.amount_kills = 0
         level_kills *= 1.5
-    if player.count_kills >= level_kills and world.level == 3:
+    if player.count_kills >= level_kills-7 and world.level == 1:
+        pygame.mixer.Channel(1).stop()
+        pygame.mixer.music.stop()
+        level_kills = 8
+        current_seconds = 0
         pause = True
-        if fade == True:
+        if fade:
             fade_animation()
             fade = False
+        if sound:
+            win_s.play()
+            sound = False
         sc.blit(pygame.transform.scale(start_background, (sc_w, sc_h)), (0,0))
         text_win = font2.render("You Win!", False, (255,255,255))
         text_thx = font3.render('Thanks for playing', False, (255,255,255))
         sc.blit(text_win, (sc_w/2-150, sc_h/2-100))
         sc.blit(text_thx, (sc_w/2-200, sc_h/2))
+        restart_game()
+    if player.alive == False and player.frame_index == len(player.animation_list[player.action])-1:
+        pygame.mixer.Channel(1).stop()
+        pygame.mixer.music.stop()
+        level_kills = 8
+        current_seconds = 0
+        pause = True
+        if fade:
+            fade_animation()
+            fade = False
+        if sound:
+            gameover_s.play()
+            sound = False
+        sc.fill((0,0,0))
+        gameover_text = font4.render("Game Over", False, (255,0,0))
+        restart_text = font3.render("Press ENTER to restart game", False, (255,0,0))
+        sc.blit(gameover_text, (sc_w/2-260, sc_h/2-150))  
+        sc.blit(restart_text, (sc_w/2-290, sc_h/2))
+        restart_game()
 
     pygame.display.update()
     
@@ -578,5 +648,7 @@ while game:
 
         if event.type == pygame.MOUSEBUTTONUP:
             shoot = False
+        if event.type == pygame.USEREVENT and pause != True:
+            current_seconds += 1
         
     clock.tick(fps)
