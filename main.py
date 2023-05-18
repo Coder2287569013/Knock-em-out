@@ -21,10 +21,10 @@ amount_kills = 0
 plane_count = 0
 level_kills = 8
 background_count = 0
-map_list = ['map1_2.csv', 'map2_1.csv', 'map3_1.csv']
+map_list = ['maps/map1_2.csv', 'maps/map2_1.csv', 'maps/map3_1.csv']
 map_count = 0
 sc = pygame.display.set_mode((sc_w, sc_h))
-pygame.display.set_caption("Knock'em out! pre-release")
+pygame.display.set_caption("Knock'em out! pre-release v3")
 clock = pygame.time.Clock()
 
 bullet_img = pygame.image.load('img/icons/bullet.png')
@@ -32,24 +32,24 @@ ammo_box_img = pygame.image.load('img/icons/ammo_box.png')
 health_box_img = pygame.image.load('img/icons/health_box.png')
 plane_img = pygame.image.load('img/plane/plane.png')
 boxes_img = [ammo_box_img, health_box_img]
-background_img = pygame.image.load('background.png')
-background2_img = pygame.image.load('background2.jpg')
-background3_img = pygame.image.load('background3.png')
-start_background = pygame.image.load('start_background.jpg')
+background_img = pygame.image.load('backs/background.png')
+background2_img = pygame.image.load('backs/background2.jpg')
+background3_img = pygame.image.load('backs/background3.png')
+start_background = pygame.image.load('backs/start_background.jpg')
 backgrounds = [background_img, pygame.transform.scale(background2_img, (sc_w, sc_h)), pygame.transform.scale(background3_img, (sc_w, sc_h)),]
-grass_img = pygame.image.load('grass3.png')
-grass2_img = pygame.image.load('grass4.png')
-sand1_img = pygame.image.load('sand1.png')
-sand2_img = pygame.image.load('sand2.png')
-sandstone1_img = pygame.image.load('sandstone1.png')
-sandstone2_img = pygame.image.load('sandstone2.png')
+grass_img = pygame.image.load('map_tiles/grass3.png')
+grass2_img = pygame.image.load('map_tiles/grass4.png')
+sand1_img = pygame.image.load('map_tiles/sand1.png')
+sand2_img = pygame.image.load('map_tiles/sand2.png')
+sandstone1_img = pygame.image.load('map_tiles/sandstone1.png')
+sandstone2_img = pygame.image.load('map_tiles/sandstone2.png')
 sand_list = [sand1_img,sand2_img]
 sandstone_list = [sandstone1_img, sandstone2_img]
 
-shooting_s = pygame.mixer.Sound('shooting_s.ogg')
-helicopter_s = pygame.mixer.Sound('helicopter_s.ogg')
-win_s = pygame.mixer.Sound('win_sound.mp3')
-gameover_s = pygame.mixer.Sound('gameover_sound.mp3')
+shooting_s = pygame.mixer.Sound('sounds/shooting_s.ogg')
+helicopter_s = pygame.mixer.Sound('sounds/helicopter_s.ogg')
+win_s = pygame.mixer.Sound('sounds/win_sound.mp3')
+gameover_s = pygame.mixer.Sound('sounds/gameover_sound.mp3')
  #to be continued...
 
 font = pygame.font.Font('Baron Neue.otf', 20)
@@ -424,7 +424,7 @@ def menu(game, sc,fps,font,font2):
     title_text = font2.render('Knock`em out!', False, (255,255,255))
     button1 = Button(440,320,120,60,(255,0,0),(0,255,0), font, "Start")
     button2 = Button(450,420,100,60,(255,0,0),(0,255,0),font,"Exit")
-    pygame.mixer.music.load("bmenu_music.mp3")
+    pygame.mixer.music.load("sounds/bmenu_music.mp3")
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
     menu = True
@@ -439,9 +439,8 @@ def menu(game, sc,fps,font,font2):
                 game = False
             if button1.is_clicked(event):
                 pygame.mixer.music.stop()
-                pygame.mixer.music.load('game_music.mp3')
+                pygame.mixer.music.load('sounds/game_music.mp3')
                 pygame.mixer.music.play(-1)
-                pygame.mixer.music.set_volume(0.1)
                 menu = False
                 return menu
             if button2.is_clicked(event):
@@ -516,6 +515,7 @@ pygame.time.set_timer(pygame.USEREVENT, 1000)
 
 while game:
     sc.blit(backgrounds[world.level-1], (0,0))
+    pygame.mixer.music.set_volume(0.04)
     display_seconds = current_seconds % 60
     display_minutes = int(current_seconds/60) % 60
     ammo_text = font.render(f'Ammo: {player.ammo}', False, (255,255,255))
@@ -581,7 +581,7 @@ while game:
         recreate()
 
         level_kills *= 1.5
-    if player.count_kills >= level_kills-7 and world.level == 1:
+    if player.count_kills >= level_kills and world.level == 3:
         pygame.mixer.Channel(1).stop()
         pygame.mixer.music.stop()
         level_kills = 8
