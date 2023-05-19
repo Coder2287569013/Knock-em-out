@@ -590,7 +590,7 @@ while game:
         recreate()
 
         level_kills *= 1.5
-    if player.count_kills >= level_kills-7 and world.level == 1:
+    if player.count_kills >= level_kills and world.level == 3:
         if data[str(name.lower())] < current_seconds:
             data[str(name.lower())] = current_seconds
             with open('speedrun_time.json', 'w') as f:
