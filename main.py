@@ -2,6 +2,8 @@ import pygame
 import os
 import random
 import csv
+import json
+from pyqt_window import *
 pygame.init()
 pygame.mixer.init(frequency = 44100, size=-16, channels=1)
 
@@ -20,6 +22,7 @@ sound = True
 amount_kills = 0
 plane_count = 0
 level_kills = 8
+current_seconds = 0
 background_count = 0
 map_list = ['maps/map1_2.csv', 'maps/map2_1.csv', 'maps/map3_1.csv']
 map_count = 0
@@ -58,6 +61,13 @@ font3 = pygame.font.Font('Baron Neue.otf', 40)
 font4 = pygame.font.Font('Baron Neue.otf', 98)
 
 health_text = font.render('Health:', False, (255,255,255))
+name = text
+
+data = json.load(open('speedrun_time.json'))
+if name.lower() not in data.keys():
+    data[name.lower()] = current_seconds
+with open('speedrun_time.json', 'w') as f:
+    json.dump(data,f)
 
 def fade_animation(): 
     fade = pygame.Surface((sc_w,sc_h))
@@ -368,7 +378,7 @@ class Plane(pygame.sprite.Sprite):
             self.rect.x = -300
             self.dx = 1
             self.image = pygame.transform.flip(self.image, True, False)
-            pygame.mixer.Channel(1).play(helicopter_s)
+        pygame.mixer.Channel(1).play(helicopter_s)
     def update(self):
         global plane_count
         if (self.rect.left >= sc_w+500) or (self.rect.right <= -500):
@@ -510,7 +520,6 @@ player = Soldier("player",200,200,1.7,5,40)
 world = World(map_list[0])
 world.create_level(GameSprite, grass_img , grass2_img)
 menu(game,sc,fps,font3,font2)
-current_seconds = 0
 pygame.time.set_timer(pygame.USEREVENT, 1000)
 
 while game:
@@ -581,7 +590,11 @@ while game:
         recreate()
 
         level_kills *= 1.5
-    if player.count_kills >= level_kills and world.level == 3:
+    if player.count_kills >= level_kills-7 and world.level == 1:
+        if data[str(name.lower())] < current_seconds:
+            data[str(name.lower())] = current_seconds
+            with open('speedrun_time.json', 'w') as f:
+                json.dump(data,f)
         pygame.mixer.Channel(1).stop()
         pygame.mixer.music.stop()
         level_kills = 8
