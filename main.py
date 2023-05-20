@@ -51,8 +51,8 @@ sandstone_list = [sandstone1_img, sandstone2_img]
 
 shooting_s = pygame.mixer.Sound('sounds/shooting_s.ogg')
 helicopter_s = pygame.mixer.Sound('sounds/helicopter_s.ogg')
-win_s = pygame.mixer.Sound('sounds/win_sound.mp3')
-gameover_s = pygame.mixer.Sound('sounds/gameover_sound.mp3')
+win_s = pygame.mixer.Sound('sounds/win_sound.ogg')
+gameover_s = pygame.mixer.Sound('sounds/gameover_sound.ogg')
  #to be continued...
 
 font = pygame.font.Font('Baron Neue.otf', 20)
@@ -516,7 +516,7 @@ for i in range(len(enemy_groups)-1):
         enemy_groups[i].add(enemy)
 
 
-player = Soldier("player",200,200,1.7,5,40)
+player = Soldier("player",100,100,1.7,5,40)
 world = World(map_list[0])
 world.create_level(GameSprite, grass_img , grass2_img)
 menu(game,sc,fps,font3,font2)
@@ -524,7 +524,7 @@ pygame.time.set_timer(pygame.USEREVENT, 1000)
 
 while game:
     sc.blit(backgrounds[world.level-1], (0,0))
-    pygame.mixer.music.set_volume(0.04)
+    pygame.mixer.music.set_volume(0.2)
     display_seconds = current_seconds % 60
     display_minutes = int(current_seconds/60) % 60
     ammo_text = font.render(f'Ammo: {player.ammo}', False, (255,255,255))
@@ -591,14 +591,13 @@ while game:
 
         level_kills *= 1.5
     if player.count_kills >= level_kills and world.level == 3:
-        if data[str(name.lower())] < current_seconds:
+        if data[str(name.lower())] == 0 or data[str(name.lower())] < current_seconds:
             data[str(name.lower())] = current_seconds
             with open('speedrun_time.json', 'w') as f:
                 json.dump(data,f)
         pygame.mixer.Channel(1).stop()
         pygame.mixer.music.stop()
         level_kills = 8
-        current_seconds = 0
         pause = True
         if fade:
             fade_animation()
@@ -611,7 +610,6 @@ while game:
         text_thx = font3.render('Thanks for playing', False, (255,255,255))
         sc.blit(text_win, (sc_w/2-150, sc_h/2-100))
         sc.blit(text_thx, (sc_w/2-200, sc_h/2))
-        restart_game()
     if player.alive == False and player.frame_index == len(player.animation_list[player.action])-1:
         pygame.mixer.Channel(1).stop()
         pygame.mixer.music.stop()
